@@ -45,21 +45,23 @@ def DCT(F): #F ist die Matrix (F_jk)=f(x_j,y_k) ausgewertet an x_j und y_k
 def TDCT(D,x,y):     #x,y vector   
     #allgemein TDCT, nicht fuer JPEG geeignet
     #bei JPEG bitte noch D zuerst faktoralisieren
-    A = np.zeros((N,M))
-    for j in range(N):
-        for k in range(M):
+    P = len(x)
+    Q = len(y)
+    A = np.zeros((P,Q))
+    for p in range(P):
+        for q in range(Q):
             #_j = _k = 0
-            A[j][k] += 0.25 * D[0][0]    # * cos(0*x) * cos(0*y) = 1
+            A[p][q] += 0.25 * D[0][0]    # * cos(0*x) * cos(0*y) = 1
             #_j = 0
-            for _k in range(1,M):
-                A[j][k] += 0.5 * D[0][_k] * np.cos(_k*y[k])    # * cos(0*x) = 1
+            for k in range(1,M):
+                A[p][q] += 0.5 * D[0][k] * np.cos(k*y[q])    # * cos(0*x) = 1
             #_k = 0
-            for _j in range(1,N):
-                A[j][k] += 0.5 * D[_j][0] * np.cos(_j*x[j])    # * cos(0*y) = 1 
+            for j in range(1,N):
+                A[p][q] += 0.5 * D[j][0] * np.cos(j*x[p])    # * cos(0*y) = 1 
             #sonst
-            for _j in range(1,N):
-                for _k in range(1,M):
-                    A[j][k] += D[_j][_k] * np.cos(_j*x[j]) * np.cos(_k*y[k])
+            for j in range(1,N):
+                for k in range(1,M):
+                    A[p][q] += D[j][k] * np.cos(j*x[p]) * np.cos(k*y[q])
     return A
 
 # Aufgabe 1
