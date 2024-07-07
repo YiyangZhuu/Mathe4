@@ -2,99 +2,109 @@
 # Testat am 16,07,2024  15:30-15:45  bei Tamme Claus
 
 import numpy as np
-import matplotlib as plt
+import matplotlib.pyplot as plt
+
+#parameters
+N=50
 
 # Aufgabe 1
 # Jacobi 
 def JC(A, b, delta=1e-4, max_iteration=1000):
     m = len(b)
-    steps = 0
     u = np.zeros(m)
     u_new = np.zeros(m)
+    steps = 0
     error = 1
+    L = np.tril(A, k=-1)
+    R = np.triu(A, k=1)
+    D = np.diag(A)
+    D = np.diag(D)
+    D_inv = np.linalg.inv(D)
+    B = -np.dot(D_inv , L + R)
+    y = np.dot(D_inv, b)
     while(error >= delta and steps <= max_iteration):
-        for i in range(m):
-            temp = 0
-            for j in range(m):
-                if (j != i):
-                    temp += A[i][j] * u[j] 
-            u_new[i] = (b[i] - temp) / A[i][i]
         u = u_new
+        u_new = np.dot(B, u) + y
         error = np.linalg.norm(b - np.dot(A,u),ord=np.inf)
         steps += 1
+        print("JC: " + str(steps))
     return u, steps
 
 # Gauss-Seidel
 def GS(A,b, delta=1e-4, max_iteration=1000):
     m = len(b)
-    steps = 0
     u = np.zeros(m)
     u_new = np.zeros(m)
+    steps = 0
     error = 1
+    L = np.tril(A, k=-1)
+    R = np.triu(A, k=1)
+    D = np.diag(A)
+    D = np.diag(D)
+    D_L = D+L
+    D_L_inv = np.linalg.inv(D_L)
+    B = -np.dot(D_L_inv , R)
+    y = np.dot(D_L_inv, b)
     while(error >= delta and steps <= max_iteration):
-        for i in range(m):
-            temp1 = 0
-            temp2 = 0
-            for j in range(i):
-                temp1 += A[i][j] * u_new[j]
-            for j in range(i+1,m):
-                temp2 += A[i][j] * u[j]
-            u_new[i] = (b[i] - temp1 - temp2) / A[i][i]
         u = u_new
+        u_new = np.dot(B, u) + y
         error = np.linalg.norm(b - np.dot(A,u),ord=np.inf)
         steps += 1
+        print("GS: " + str(steps))
     return u, steps
 
 # visualisation
-def plot(u, n):
-    x = np.linspace(0, 1, n+1)
-    y = np.linspace(0, 1, n+1)
+def plot(u, n=N, title: str = "title"):
+    u = np.array(u)
+    U = u.reshape((n+1), (n+1))
+    x = np.linspace(0,1,n+1)
+    y = np.linspace(0,1,n+1)
     X, Y = np.meshgrid(x, y)
-    U = u.reshape((n-1,n-1))
+   
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.plot_surface(X[1:-1, 1:-1], Y[1:-1, 1:-1], U, cmap='viridis')
-    ax.set_xlabel('X axis')
-    ax.set_ylabel('Y axis')
-    ax.set_zlabel('U')
+    ax.plot_surface(X, Y, U, cmap='viridis')
+
+    ax.set_title(title)
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    plt.savefig(title)
     plt.show()
     return
 
-# test
-def testJC():
-    A = np.array([[2,1],[5,7]])
-    b = np.array([11,13])
-    x1,s1 = JC(A,b)
-    x2 = np.linalg.solve(A,b)
-    print(x1,s1)
-    print(x2)
-    return
+f_poi = lambda x, y: -4
+g_poi = lambda x, y: x**2 + y**2
+def create_A_b_Poisson(f, g, epsilon=1, n=N):
+    h = 1/n
+    A=np.zeros(((n+1)**2,(n+1)**2))
+    b=np.zeros((n+1)**2)
+    for j in range(0,n+1):
+            for i in range(0,n+1):
+                  if i==0 or j==0 or i==n or j==n:
+                      A[(n+1)*j + i][(n+1)*j + i] =1
+                      b[(n+1)*j + i] = g(i*h, j*h)
+                  else:
+                      A[(n+1)*j + i][(n+1)*j + (i-1)]   = -epsilon/(h*h) 
+                      A[(n+1)*j + i][(n+1)*j + (i+1)]  = -epsilon/(h*h) 
+                      A[(n+1)*j + i][(n+1)*j + i]          = 4*epsilon/(h*h)
+                      A[(n+1)*j + i][(n+1)*(j-1)+ i]    = -epsilon/(h*h) 
+                      A[(n+1)*j + i][(n+1)*(j+1)+ i]   = -epsilon/(h*h) 
+                      b[(n+1)*j + i]                                = f(i*h, j*h)
+    return A,b
 
-def testGS():
-    A = np.array([[16,3],[7,-11]])
-    b = np.array([11,13])
-    x1,s1 = GS(A,b)
-    x2 = np.linalg.solve(A,b)
-    print(x1,s1)
-    print(x2)
-    return
+def Aufgabe_a():
+    A,b = create_A_b_Poisson(f_poi, g_poi)
+  
+    u, step = JC(A, b)
+    plot(u, N, "Aufgabe_a_JC")
 
+    u, step = GS(A, b)
+    plot(u, N, "Aufgabe_a_GS")
 
-# TODO !!!
-# create A and b for Posisson-Problem
-def create_A(n):
-    # TODO
-    return A
-
-def create_b(n):
-    # TODO
-    return b
-
-# Aufgabe b
-# TODO
+def Aufgabe_b():
+    #TODO
+    pass
 
 if __name__=="__main__":
-    # do something
-    #print("hello world")
-    testJC()
-    testGS()
+    Aufgabe_a()
